@@ -1,7 +1,6 @@
 #include"disk.h"
 #include"stdio.h"
 
-VirtualDisk_head disk_head;
 
 int32_t disk_close(FILE*f)
 {

@@ -1,6 +1,5 @@
 #include"disk.h"
 #include"stdio.h"
-VirtualDisk_head disk_head;
 
 //error: return 0
 //or return size
