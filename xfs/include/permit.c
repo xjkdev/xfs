@@ -2,9 +2,9 @@
 #include<stdio.h>
 #include<string.h>
 //correct return uid else return -1
-int32_t creat_usr(char *usr_name,char* passwd);
-//correct return gid else return -1
-int32_t creat_group(char *group_name);
+// int32_t creat_usr(char *usr_name,char* passwd);
+// //correct return gid else return -1
+// int32_t creat_group(char *group_name);
 
 int32_t creat_usr(char *usr_name,char* passwd)
 {
