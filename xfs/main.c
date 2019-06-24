@@ -1,8 +1,29 @@
-#include "include/hashtable.h"
-#include "include/list.h"
-#include "include/rbtree.h"
 #include <assert.h>
+#include <include/bitmap.h>
+#include <include/hashtable.h>
+#include <include/list.h>
+#include <include/rbtree.h>
+#include <include/xfs/fs_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-int main() { return 0; }
+#define EXTERN_HERE
+#include <include/globals.h>
+#undef EXTERN_HERE
+
+void init_globals() { INIT_LIST_HEAD(&loaded_inodes); }
+
+#ifndef TEST
+int main() {
+  unsigned char bitmap[10] = {0};
+  int i;
+  bitmap_setbit(bitmap, 1);
+  bitmap_setbit(bitmap, 8);
+  for (i = 0; i < 10; i++) {
+    printf("%02x ", bitmap[i]);
+  }
+  printf("\n");
+  printf("%d\n", (int)sizeof(struct inode_struct));
+  return 0;
+}
+#endif
