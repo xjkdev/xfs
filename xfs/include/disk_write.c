@@ -1,5 +1,5 @@
 #include"disk.h"
-#include"stdio.h"
+#include<stdio.h>
 
 //error: return 0
 //or return size

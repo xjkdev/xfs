@@ -54,3 +54,4 @@ int32_t add_usr_to_group(int16_t gid,int16_t uid)
     g->usr_array[g->usr_count++]=uid;
     return 0;
 }
+

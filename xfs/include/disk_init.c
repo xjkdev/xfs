@@ -1,8 +1,8 @@
 #include"disk.h"
-#include"stdio.h"
-#include"string.h"
+#include<stdio.h>
+#include<string.h>
 //error :return 0
-VirtualDisk_head disk_head;
+//VirtualDisk_head disk_head;
 int32_t disk_init(char *path)
 {
 	FILE *f=fopen(path, "wb+");
