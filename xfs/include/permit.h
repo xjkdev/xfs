@@ -2,6 +2,7 @@
 #define GROUPMEMCOUNT 100
 #define USRMAXSIZE 500
 #define GROUPMAXSIZE 500 
+
 #include <stdint.h>
 struct usr ;
 struct group;
@@ -15,8 +16,17 @@ extern int16_t gid_auto_increase;
 int32_t creat_usr(char *usr_name,char* passwd);
 //correct return gid else return -1
 int32_t creat_group(char *group_name);
-
-
+//add usr to a group 
+//false return -1 else return 0
+int32_t add_usr_to_group(int16_t gid,int16_t uid);
+//printf a usr info by  its uid 
+void usr_elem_printf(int16_t uid);
+//printf a group info by its gid
+void group_elem_printf(int16_t gid);
+//printf all usr info by calling usr_elem_printf(...) 
+void usr_list_printf();
+//printf all group info by calling group_elem_printf(...)
+void group_list_printf();
 
 typedef struct usr 
 {
