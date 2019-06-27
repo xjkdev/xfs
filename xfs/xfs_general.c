@@ -266,3 +266,6 @@ void init_superblock(struct superblock_struct *sblock) {
   sblock->block_size = BLOCK_SIZE;
   sblock->root_inode = NULL;
 }
+
+xuid_t xfs_getuid() { return cur_uid; }
+xuid_t xfs_getgid() { return cur_gid; }

@@ -19,8 +19,8 @@ int disk_init(char *path) {
   fwrite(&disk_head, sizeof(disk_head), 1, f);
   // init vdisk and write disk_head and (1024-sizeof(disk_head)) bytes into the
   // vdisk
-  char ch[1024] = {'\0'};
-  fwrite(&ch, sizeof(ch), 1024 - sizeof(disk_head), f);
+  // char ch[1024] = {'\0'};
+  // fwrite(&ch, 1, 1024 - sizeof(disk_head), f);
   // fseek(f, 0, 0);
   fclose(f);
   /*

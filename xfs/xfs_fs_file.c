@@ -37,6 +37,7 @@ int _open_parent_dir(const char *path, struct inode_struct **parent,
   struct diritem_struct *iter_item, *dir_items = malloc(cur_dir->file_size);
   int res = _read_inode(cur_dir, (char *)dir_items, cur_dir->file_size, 0);
   bool flag_parent_found;
+  bool flag_first_malloc = true;
   *parent = cur_dir;
 
   path_split_for_each(name, pos, split) { // get parent inode
@@ -58,6 +59,10 @@ int _open_parent_dir(const char *path, struct inode_struct **parent,
       // TODO: set errno
       free(dir_items);
       return -1;
+    }
+    if (flag_first_malloc) {
+      *parent = malloc(sizeof(struct inode_struct));
+      flag_first_malloc = false;
     }
 
     cur_file_size = cur_dir->file_size;
@@ -110,7 +115,8 @@ int xfs_open(const char *path, int oflag) {
     flag_existed = true;
   } else {
     struct diritem_struct *iter_item, *dir_items;
-    _open_parent_dir(path, &parent, filename, &parent_ptr);
+    if (_open_parent_dir(path, &parent, filename, &parent_ptr) == -1)
+      return -1;
     dir_items = malloc(parent->file_size);
     _read_inode(parent, (char *)dir_items, parent->file_size, 0);
 
@@ -125,12 +131,28 @@ int xfs_open(const char *path, int oflag) {
     }
     free(dir_items);
   }
-
-  if (flag_existed && (oflag & O_EXCL)) {
-    free(opened_file);
-    _destroy_parent_dir(parent);
-    return -1;
+  if (flag_existed) {
+    if (!_is_root(path)) {
+      disk_read(inode_ptr, (char *)opened_file, sizeof(struct inode_struct));
+    }
+    if ((oflag & O_EXCL)) {
+      free(opened_file);
+      _destroy_parent_dir(parent);
+      return -1;
+    }
+    if (!check_permission_read(opened_file)) {
+      free(opened_file);
+      _destroy_parent_dir(parent);
+      return -1;
+    }
+    if (!check_permission_write(opened_file) &&
+        (oflag & O_ACCMODE) != O_RDONLY) {
+      free(opened_file);
+      _destroy_parent_dir(parent);
+      return -1;
+    }
   }
+
   if (!flag_existed) {
     struct diritem_struct new_diritem;
     inode_ptr = inode_alloc();
@@ -141,8 +163,6 @@ int xfs_open(const char *path, int oflag) {
     _write_inode(parent_ptr, parent, (char *)&new_diritem,
                  sizeof(struct diritem_struct),
                  parent->file_size); // 新目录项追加在最后
-  } else if (!_is_root(path)) {
-    disk_read(inode_ptr, (char *)opened_file, sizeof(struct inode_struct));
   }
   // 新建fd
   new_fd = malloc(sizeof(struct fd_struct));
@@ -204,7 +224,7 @@ void _clear_file_content(struct inode_struct *inode) {
 }
 
 int xfs_creat(const char *path, xmode_t mode) {
-  struct inode_struct *parent;
+  struct inode_struct *parent = NULL;
   struct diritem_struct *iter_item, *dir_items;
   char filename[60];
   bool flag_existed = false;
@@ -303,8 +323,9 @@ int xfs_remove(const char *path) {
     struct inode_struct file;
     disk_read(iter_item->inode, (char *)&file, sizeof(struct inode_struct));
     _clear_file_content(&file);
-    if (total_n - (i + 1) != 0) {
-      _write_inode(parent_ptr, parent, iter_item + 1, total_n - (i + 1),
+    if (total_n != i + 1) { // 不是最后一个
+      _write_inode(parent_ptr, parent, iter_item + 1,
+                   (total_n - (i + 1)) * sizeof(struct diritem_struct),
                    i * sizeof(struct diritem_struct));
     }
     _truncate_inode(parent, -sizeof(struct diritem_struct));
@@ -325,7 +346,8 @@ XDIR *xfs_opendir(const char *filename) {
   struct fd_struct *pos = fd_table_search(fd);
   XDIR *res = malloc(sizeof(XDIR));
   INIT_LIST_HEAD(&res->node);
-
+  if (pos == NULL)
+    return res;
   int n;
   for (n = 0; n < pos->inode->file_size; n += sizeof(struct diritem_struct)) {
     XDIR *newnode = malloc(sizeof(XDIR));

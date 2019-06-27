@@ -9,18 +9,17 @@
 // int32_t creat_group(char *group_name);
 
 xuid_t xfs_creat_usr(char *usr_name, char *passwd) {
-  struct usr new_usr;
+  struct usr *new_usr = &usr_list[uid_auto_increase];
   if (uid_auto_increase >= USRMAXSIZE) {
     return -1;
   }
-  new_usr.uid = uid_auto_increase++;
+  new_usr->uid = uid_auto_increase++;
   // new_usr.gid=gid_auto_increase++;
   // gid =-1 means usr is not in a group
-  new_usr.gid = -1;
-  memcpy(new_usr.usr_name, usr_name, strlen(usr_name));
-  memcpy(new_usr.usr_passwd, passwd, strlen(passwd));
-  usr_list[uid_auto_increase] = new_usr;
-  return new_usr.uid;
+  new_usr->gid = -1;
+  strncpy(new_usr->usr_name, usr_name, strlen(usr_name));
+  strncpy(new_usr->usr_passwd, passwd, strlen(passwd));
+  return new_usr->uid;
 }
 
 xgid_t xfs_creat_group(char *group_name) {
@@ -95,26 +94,25 @@ void group_list_print() {
   return;
 }
 
-xuid_t login(char *usr_name, char *usr_passwd) {
-  bool flag_exsit = 0;
+xuid_t xfs_login(char *usr_name, char *usr_passwd) {
+  bool flag_exist = 0;
   bool flag_correct = 0;
-  usr usr_temp;
-  for (int i = 0; i < uid_auto_increase; ++i) {
-    usr_temp = usr_list[i];
-    if (strcmp(usr_temp.usr_name, usr_name) == 0) {
-      flag_exsit = 1;
+  int i;
+  for (i = 0; i < uid_auto_increase; ++i) {
+    if (strcmp(usr_list[i].usr_name, usr_name) == 0) {
+      flag_exist = 1;
       break;
     }
   }
   // usr_name does not exsit
-  if (flag_exsit == 0)
+  if (flag_exist == 0)
     return 0;
-  cur_uid = usr_temp.uid;
-  cur_gid = usr_temp.gid;
+  cur_uid = usr_list[i].uid;
+  cur_gid = usr_list[i].gid;
   return 1;
 }
 
-void logout() {
+void xfs_logout() {
   cur_gid = 0;
   cur_uid = 0;
   return;

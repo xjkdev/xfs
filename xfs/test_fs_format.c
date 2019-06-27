@@ -47,11 +47,14 @@ void test_mkdir() {
   res = xfs_mkdir("/c/a");
   print_res(res);
   assert(res == 0);
+  printf("?\n");
   listdir("/");
   print_res(0);
   listdir("/c");
   print_res(0);
   listdir("/c/a");
+  print_res(0);
+  listdir("/");
   print_res(0);
 }
 
@@ -83,8 +86,42 @@ void test_read_write() {
   assert(res != -1);
 }
 
-test_case_t test_cases[] = {test_format1, test_listdir, test_mkdir,
-                            test_read_write};
+void test_user() {
+  int fd, res, a = xfs_creat_usr("abc", "123");
+  print_res(a);
+  res = xfs_login("abc", "123");
+  print_res(res);
+  assert(res == 1);
+  assert(cur_uid = a);
+  fd = xfs_open("/abcd", O_RDWR);
+  print_res(fd);
+  assert(fd == -1);
+  res = xfs_creat("/defc", DEFAULT_MODE);
+  print_res(res);
+  assert(res == 0);
+  res = xfs_creat("/opge", DEFAULT_MODE | FM_IRWXO);
+  print_res(res);
+  assert(res == 0);
+  xfs_logout();
+  res = xfs_open("/defc", O_RDWR);
+  print_res(res);
+  assert(res == -1);
+  res = xfs_open("/opge", O_RDWR);
+  print_res(res);
+  assert(res == 0);
+}
+
+void test_remove() {
+  listdir("/");
+  int res = xfs_remove("/ab");
+  print_res(res);
+  assert(res == 0);
+  listdir("/");
+  print_res(0);
+}
+
+test_case_t test_cases[] = {test_format1,    test_listdir, test_mkdir,
+                            test_read_write, test_user,    test_remove};
 
 int main() {
   const char str[] = "hello world";

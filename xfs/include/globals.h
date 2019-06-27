@@ -23,7 +23,7 @@ EXTERN struct virtual_disk_head disk_head;
 
 EXTERN struct usr usr_list[USRMAXSIZE];
 EXTERN struct group group_list[GROUPMAXSIZE];
-EXTERN int16_t uid_auto_increase;
-EXTERN int16_t gid_auto_increase;
+EXTERN xuid_t uid_auto_increase;
+EXTERN xuid_t gid_auto_increase;
 
 #endif
