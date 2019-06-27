@@ -1,6 +1,7 @@
 #include "disk.h"
 #include <stdio.h>
 #include <string.h>
+#include "globals.h"
 // error :return 0
 // virtual_disk_head disk_head;
 int32_t disk_init(char *path) {
@@ -15,7 +16,11 @@ int32_t disk_init(char *path) {
   disk_head.disk_file = f;
   memcpy(disk_head.disk_path, path, strlen(path));
   fwrite(&disk_head, sizeof(disk_head), 1, f);
-  fseek(f, 0, 0);
+  //init vdisk and write disk_head and (1024-sizeof(disk_head)) bytes into the vdisk
+  char ch[1024]={'\0'};
+  fwrite(&ch,sizeof(ch),1024-sizeof(disk_head),f);
+  //fseek(f, 0, 0);
+  fclose(f);
   /*
           deal with error
   */
