@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <include/bitmap.h>
+#include <include/disk.h>
 #include <include/hashtable.h>
 #include <include/list.h>
 #include <include/rbtree.h>
@@ -13,7 +14,6 @@
 
 void init_globals() { RB_EMPTY_ROOT(&fd_table); }
 
-#ifndef TEST
 int main() {
   unsigned char bitmap[10] = {0};
   int i;
@@ -26,4 +26,3 @@ int main() {
   printf("%d\n", (int)sizeof(struct inode_struct));
   return 0;
 }
-#endif

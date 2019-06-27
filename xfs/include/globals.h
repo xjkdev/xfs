@@ -17,4 +17,5 @@ EXTERN xgid_t cur_gid;
 
 EXTERN struct rb_root fd_table;
 EXTERN int free_fd;
+EXTERN struct virtual_disk_head disk_head;
 #endif
