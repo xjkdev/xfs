@@ -11,7 +11,7 @@
 #include <include/globals.h>
 #undef EXTERN_HERE
 
-void init_globals() { INIT_LIST_HEAD(&loaded_inodes); }
+void init_globals() { RB_EMPTY_ROOT(&fd_table); }
 
 #ifndef TEST
 int main() {

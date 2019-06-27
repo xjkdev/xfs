@@ -1,6 +1,7 @@
 #ifndef XFS_FS_TYPES
 #define XFS_FS_TYPES
 #include <include/xfs.h>
+#include <include/xfs/fs.h>
 
 #define MAGIC_NUMBER 0xFE9527EF
 #define BLOCK_SIZE 4096
@@ -16,11 +17,11 @@ typedef unsigned char disk_block[BLOCK_SIZE];
 
 struct inode_struct {
   xmode_t mod;
-  uint16_t linked_count;
+  uint16_t linked_count; // unused
   xuid_t uid;
   xgid_t gid;
   xsize_t file_size;
-  xsize_t atime, mtime, ctime;
+  xsize_t atime, mtime, ctime; // unused
   diskptr_t block[INODE_DIRECT_COUNT];
   diskptr_t indir_block;  // 1级间接节点
   diskptr_t indir_block2; // 2级间接节点
@@ -66,8 +67,15 @@ struct inode_list {
   struct list_head list;
 };
 
-struct XDIR_struct {
-  struct diritem_struct dir;
+typedef struct diritem_struct XDIR_struct;
+
+struct fd_struct {
+  int fd;
+  xoff_t offset;
+  xmode_t oflags;
+  diskptr_t inode_ptr;
+  struct inode_struct *inode;
+  struct rb_node node;
 };
 
 #define diritem_for_each(pos, items, length)                                   \

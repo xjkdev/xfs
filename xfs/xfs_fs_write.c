@@ -259,3 +259,13 @@ int _write_inode(struct inode_struct *inode, char *buf, xsize_t nbyte,
                                  offset - direct_max_size);
   }
 }
+
+xsize_t xfs_write(int fildes, char *buf, xsize_t nbyte) {
+  struct fd_struct *fd = fd_table_search(fildes);
+  if (fd == NULL)
+    return -1;
+  if (!(fd->mod & O_ACCMODE == O_WRONLY || fd->mod & O_ACCMODE == O_RDWR)) {
+    return -1;
+  }
+  return _write_inode(fd->inode, buf, nbyte, fd->offset);
+}

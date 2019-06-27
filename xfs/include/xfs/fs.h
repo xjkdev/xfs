@@ -10,6 +10,7 @@
 #define O_WRONLY 0x0001  /* open for writing only */
 #define O_RDWR 0x0002    /* open for reading and writing */
 #define O_ACCMODE 0x0003 /* mask for above modes */
+#define O_APPEND 0x0008  /* set append mode */
 #endif
 
 #ifndef SEEK_SET
@@ -36,6 +37,10 @@
 #endif
 
 #define FM_DIR 01000
+
+#define DEFAULT_MODE (FM_IRUSR | FM_IWUSR | FM_IRGRP | FM_IROTH)
+#define DEFAULT_DIR_MODE                                                       \
+  (FM_DIR | FM_IRWXU | FM_IRGRP | FM_IXGRP | FM_IROTH | FM_IXOTH)
 
 int xfs_open(const char *path, int oflag);
 int xfs_close(int fildes);
