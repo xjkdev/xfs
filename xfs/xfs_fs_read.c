@@ -1,3 +1,4 @@
+#include <include/disk.h>
 #include <include/globals.h>
 #include <include/xfs/fs.h>
 #include <include/xfs/fs_types.h>
@@ -154,12 +155,18 @@ int _read_inode(struct inode_struct *inode, char *buf, xsize_t nbyte,
   }
 }
 
-xsize_t xfs_read(int fildes, char *buf, xsize_t nbyte) {
+xsize_t xfs_read(int fildes, const char *buf, xsize_t nbyte) {
   struct fd_struct *fd = fd_table_search(fildes);
   if (fd == NULL)
     return -1;
-  if (!(fd->mod & O_ACCMODE == O_RDONLY || fd->mod & O_ACCMODE == O_RDWR)) {
+  if (!((fd->oflags & O_ACCMODE) == O_RDONLY ||
+        (fd->oflags & O_ACCMODE) == O_RDWR)) {
     return -1;
   }
-  return _read_inode(fd->inode, buf, nbyte, fd->offset);
+  int res;
+  res = _read_inode(fd->inode, buf, nbyte, fd->offset);
+  if (res != -1) {
+    fd->offset += res;
+  }
+  return res;
 }

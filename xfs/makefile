@@ -1,20 +1,19 @@
 CC=gcc
 DIR_INCLUDE = include
-CFLAGS = --std=gnu99 -I.
-DEPS = $(wildcard $(DIR_INCLUDE)/*.h)  
+CFLAGS = --std=gnu99 -I. -g
+DEPS = $(wildcard $(DIR_INCLUDE)/**/*.h)
 OUTPUT = target
 TARGET = xfs
 SRC = $(filter-out test_%.c, $(wildcard *.c))
+TEST_SRC = $(filter test_%.c, $(wildcard *.c))
 OBJS = $(patsubst %.c,${OUTPUT}/%.o, $(notdir ${SRC}))
 TEST_OBJS = $(filter-out $(OUTPUT)/main.o, $(OBJS))
+TEST_TARGET = $(patsubst %.c, $(TEST_OUTPUT)/%, $(TEST_SRC))
 TEST_OUTPUT = $(OUTPUT)/test
 
 all: all_before build_target
 
-test: all_before test_before test_bitmap test_types_size
-
-test_before:
-	-test -d $(TEST_OUTPUT) || mkdir $(TEST_OUTPUT)
+test: all_before test_before test_generic
 
 build_target: $(OUTPUT)/$(TARGET)
 
@@ -27,17 +26,13 @@ $(OUTPUT)/%.o: %.c $(DEPS)
 $(OUTPUT)/$(TARGET): $(OBJS)
 	$(CC) -o $@ $(CFLAGS) $(OBJS)
 
-test_bitmap: $(TEST_OUTPUT)/test_bitmap
-	$(TEST_OUTPUT)/test_bitmap
+test_before:
+	-test -d $(TEST_OUTPUT) && rm $(TEST_OUTPUT)/test_* || mkdir $(TEST_OUTPUT)
 
-$(TEST_OUTPUT)/test_bitmap: test_bitmap.c
-	$(CC) -o $@ $(CFLAGS) test_bitmap.c
+test_generic: $(TEST_TARGET)
 
-test_types_size: $(TEST_OUTPUT)/test_types_size $(DIR_INCLUDE)/bitmap.h
-	$(TEST_OUTPUT)/test_types_size
-
-$(TEST_OUTPUT)/test_types_size: test_types_size.c $(DIR_INCLUDE)/xfs/fs_types.h
-	$(CC) -o $@ $(CFLAGS) test_types_size.c
+$(TEST_TARGET): $(TEST_OUTPUT)/%: %.c $(TEST_OBJS)
+	$(CC) -o $@ $(CFLAGS) -w $< $(TEST_OBJS) && $@
 
 clean:
 	rm -rf $(OUTPUT)

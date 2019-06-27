@@ -1,6 +1,8 @@
 #include <include/bitmap.h>
+#include <include/disk.h>
 #include <include/globals.h>
 #include <include/list.h>
+#include <include/xfs/fs.h>
 #include <include/xfs/fs_types.h>
 #include <include/xfs/general.h>
 #include <stdlib.h>
@@ -40,7 +42,8 @@ diskptr_t block_alloc() {
   diskptr_t block_bitmap_ptr = block_bitmap_start();
   for (i = 0; i < loaded_xfs.block_bitmap_count;
        i++, block_bitmap_ptr += loaded_xfs.block_size) {
-    int res = disk_read(block_bitmap_ptr, bitmap, loaded_xfs.block_size);
+    int res = disk_read(block_bitmap_ptr, (const char *)bitmap,
+                        loaded_xfs.block_size);
     if (res == -1) {
       free(bitmap);
       return DA_NULL;
@@ -59,12 +62,13 @@ diskptr_t block_alloc() {
                     (bits_per_block * i + j * 8) * loaded_xfs.block_size;
     int k;
     for (k = 0; k < 8; k++) {
-      if (bitmap_get(bitmap[j], k) == 0) {
-        bitmap_setbit(bitmap[j], k);
+      if (bitmap_get(&bitmap[j], k) == 0) {
+        bitmap_setbit(&bitmap[j], k);
         res += k * loaded_xfs.block_size;
         break;
       }
     }
+    disk_write(block_bitmap_ptr, bitmap, loaded_xfs.block_size);
     free(bitmap);
     return res;
   } else {
@@ -103,7 +107,8 @@ diskptr_t inode_alloc() {
   diskptr_t inode_bitmap_ptr = inode_bitmap_start();
   for (i = 0; i < loaded_xfs.inode_bitmap_count;
        i++, inode_bitmap_ptr += loaded_xfs.block_size) {
-    int res = disk_read(inode_bitmap_ptr, bitmap, loaded_xfs.block_size);
+    int res = disk_read(inode_bitmap_ptr, (const char *)bitmap,
+                        loaded_xfs.block_size);
     if (res == -1) {
       free(bitmap);
       return DA_NULL;
@@ -122,12 +127,13 @@ diskptr_t inode_alloc() {
                     j * 8 * sizeof(struct inode_struct);
     int k;
     for (k = 0; k < 8; k++) {
-      if (bitmap_get(bitmap[j], k) == 0) {
-        bitmap_setbit(bitmap[j], k);
+      if (bitmap_get(&bitmap[j], k) == 0) {
+        bitmap_setbit(&bitmap[j], k);
         res += k * sizeof(struct inode_struct);
         break;
       }
     }
+    disk_write(inode_bitmap_ptr, bitmap, loaded_xfs.block_size);
     free(bitmap);
     return res;
   } else {
@@ -152,7 +158,7 @@ int inode_free(diskptr_t inode) {
   return 0;
 }
 
-inline void init_inode(struct inode_struct *inode, xuid_t uid, xgid_t gid) {
+void init_inode(struct inode_struct *inode, xuid_t uid, xgid_t gid) {
   int i;
   inode->mod = DEFAULT_MODE;
   inode->linked_count = 0;
@@ -169,12 +175,12 @@ inline void init_inode(struct inode_struct *inode, xuid_t uid, xgid_t gid) {
   inode->indir_block2 = DA_NULL;
 }
 
-inline void init_fd_struct(struct fd_struct *filedes) {
+void init_fd_struct(struct fd_struct *filedes) {
   filedes->fd = 0;
   filedes->oflags = 0;
   filedes->offset = 0;
   filedes->inode = NULL;
-  INIT_LIST_HEAD(filedes->list);
+  RB_EMPTY_NODE(&filedes->node);
 }
 
 struct fd_struct *_fd_struct_search(struct rb_root *root, int fd) {
@@ -193,7 +199,7 @@ struct fd_struct *_fd_struct_search(struct rb_root *root, int fd) {
   return NULL;
 }
 struct fd_struct *fd_table_search(int fd) {
-  return _fd_struct_search(&fd_table->node, fd);
+  return _fd_struct_search(&fd_table, fd);
 }
 
 int insert_fd_struct(struct fd_struct *filedes) {
@@ -203,16 +209,16 @@ int insert_fd_struct(struct fd_struct *filedes) {
   while (*new) {
     struct fd_struct *this = container_of(*new, struct fd_struct, node);
     parent = *new;
-    if (fd < this->fd)
+    if (filedes->fd < this->fd)
       new = &((*new)->rb_left);
-    else if (fd > this->fd)
+    else if (filedes->fd > this->fd)
       new = &((*new)->rb_right);
     else
       return -1;
   }
 
   rb_link_node(&filedes->node, parent, new);
-  rb_insert_color(&data->node, root);
+  rb_insert_color(&filedes->node, &fd_table);
   do {
     free_fd++;
     iter = rb_next(&filedes->node);
@@ -221,5 +227,42 @@ int insert_fd_struct(struct fd_struct *filedes) {
 }
 
 void remove_fd_struct(struct fd_struct *filedes) {
+  if (filedes->fd < free_fd) {
+    free_fd = filedes->fd;
+  }
   rb_erase(&filedes->node, &fd_table);
+}
+
+/*
+    硬盘空间      4G 2^32
+    最大文件大小   4G - 开始
+    块大小        4k 2^12
+    块个数        2^20个
+    I结点大小                64字节
+    一块i结点个数             64
+    一块位图      2^15        32,768个位
+    块位图大小    2^5         32块
+ */
+
+void init_superblock(struct superblock_struct *sblock) {
+  sblock->inode_count = 4096;
+  sblock->inode_bitmap_count =
+      (double)sblock->inode_count / (1 << 15) + 1; // i节点位图个数 向上取整
+  sblock->block_count = 1 << 20;                   // 块个数
+  sblock->block_bitmap_count =
+      (double)sblock->block_count / (1 << 15) + 1; // 块位图个数 向上取整
+  // superblock | inode_bitmap | block_bitmap | inodes | data
+  sblock->first_data_block = INODE_SEG +
+                             sblock->inode_bitmap_count * BLOCK_SIZE +
+                             sblock->block_bitmap_count * BLOCK_SIZE +
+                             sblock->inode_count * sizeof(struct inode_struct);
+
+  // -- sblock->lb = 3;                  // 1个区段有8个块
+
+  sblock->max_filesize = 0xFFFFFFFF - sblock->first_data_block;
+
+  sblock->_magic_number = MAGIC_NUMBER;
+
+  sblock->block_size = BLOCK_SIZE;
+  sblock->root_inode = NULL;
 }

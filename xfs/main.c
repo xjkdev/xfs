@@ -8,15 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define EXTERN_HERE
-#include <include/globals.h>
-#undef EXTERN_HERE
-
-void init_globals() { RB_EMPTY_ROOT(&fd_table); }
+void init_globals();
 
 int main() {
   unsigned char bitmap[10] = {0};
   int i;
+  init_globals();
   bitmap_setbit(bitmap, 1);
   bitmap_setbit(bitmap, 8);
   for (i = 0; i < 10; i++) {

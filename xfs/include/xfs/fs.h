@@ -1,6 +1,7 @@
 #ifndef XFS_FS_H
 #define XFS_FS_H
-#include "include/xfs.h"
+#include <include/xfs.h>
+#include <include/xfs/fs_types.h>
 
 #ifndef O_CREAT
 #define O_CREAT 0x0200   /* create if nonexistant */
@@ -48,8 +49,8 @@ int xfs_remove(const char *path);
 int xfs_fsync(int fildes);
 int xfs_creat(const char *path, xmode_t mode);
 
-xsize_t xfs_read(int fildes, char *buf, xsize_t nbyte);
-xsize_t xfs_write(int fildes, const char *buf, xsize_t nbyte);
+xsize_t xfs_read(int fildes, const char *buf, xsize_t nbyte);
+xsize_t xfs_write(int fildes, char *buf, xsize_t nbyte);
 xoff_t xfs_lseek(int fildes, xoff_t offset, int whence);
 
 int xfs_rename(const char *old, const char *new);
@@ -69,10 +70,15 @@ xuid_t xfs_getuid();
 xuid_t xfs_getgid();
 int setgid(xgid_t gid);
 
-struct XDIR_struct;
+struct XDIR_struct {
+  struct diritem_struct item;
+  struct list_head node;
+};
 typedef struct XDIR_struct XDIR;
 XDIR *xfs_opendir(const char *filename);
+void destroy_xdir(XDIR *dirs);
 
 int xfs_format();
 int xfs_load();
+
 #endif

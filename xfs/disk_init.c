@@ -1,13 +1,15 @@
-#include "disk.h"
+#include <include/disk.h>
+#include <include/globals.h>
 #include <stdio.h>
 #include <string.h>
-// error :return 0
+
+// error :return -1
 // virtual_disk_head disk_head;
-int32_t disk_init(char *path) {
+int disk_init(char *path) {
   FILE *f = fopen(path, "wb+");
   if (f == NULL) {
-    perror("--------------faile to init disk--------------\n");
-    return 0;
+    perror("faile to init disk\n");
+    return -1;
   }
   disk_head.head_size = sizeof(struct virtual_disk_head);
   disk_head.max_disk_size = DISKSIZE;
@@ -19,5 +21,5 @@ int32_t disk_init(char *path) {
   /*
           deal with error
   */
-  return 1;
+  return 0;
 }

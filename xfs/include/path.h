@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char **split_path(const char *path, int length) {
+char **split_path(const char *path, int length) {
   int i, j, last, count = 0;
   if (path[0] != '/') {
     count += 1;
@@ -22,10 +22,14 @@ static char **split_path(const char *path, int length) {
   if (path[0] == '/')
     i = 1;
   last = i;
-  for (; i < length; i++) {
+  char *tmp;
+  for (; i <= length; i++) {
     if (path[i] == '/' || path[i] == '\0') {
-      res[j] = malloc(i - last + 1);
-      strncpy(res[j], path + i, i - last + 1);
+      tmp = malloc(i - last + 1);
+      strncpy(tmp, path + last, i - last);
+      tmp[i - last] = '\0';
+      res[j] = tmp;
+      last = i + 1;
       j++;
     }
     if (path[i] == '\0')
@@ -35,10 +39,11 @@ static char **split_path(const char *path, int length) {
   return res;
 }
 
-static void destroy_path_split(char **split) {
-  while (*split != NULL) {
-    free(*split);
-    split++;
+void destroy_path_split(char **split) {
+  char **tmp = split;
+  while (*tmp != NULL) {
+    free(*tmp);
+    tmp++;
   }
   free(split);
 }

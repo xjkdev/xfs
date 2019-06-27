@@ -1,3 +1,4 @@
+#include <include/disk.h>
 #include <include/globals.h>
 #include <include/xfs/fs.h>
 #include <include/xfs/fs_types.h>
@@ -200,8 +201,8 @@ int _indirect_zone1_write(struct inode_struct *inode, diskptr_t indir_block,
 }
 // 提供对inode索引的原子性操作，但不能保证磁盘数据不被修改
 // 如果要保证磁盘数据不被修改，应该有日志机制
-int _write_inode(struct inode_struct *inode, char *buf, xsize_t nbyte,
-                 xsize_t offset) {
+int _write_inode(diskptr_t inode_ptr, struct inode_struct *inode, char *buf,
+                 xsize_t nbyte, xsize_t offset) {
   xsize_t direct_max_size;
   xsize_t old_file_size = inode->file_size;
   int res;
@@ -223,6 +224,7 @@ int _write_inode(struct inode_struct *inode, char *buf, xsize_t nbyte,
       _rollback(inode->block, block_backup, loaded_xfs.dz_per_inode);
     }
     free(block_backup);
+    disk_write(inode_ptr, (char *)inode, sizeof(struct inode_struct));
     return res;
   } else if (offset < direct_max_size) { // 情况2: 部分在直接块区，部分间接块区
     int res1, res2;
@@ -250,13 +252,16 @@ int _write_inode(struct inode_struct *inode, char *buf, xsize_t nbyte,
       return -1; // 这里是返回之前部分还是不返回
     }
     free(block_backup);
+    disk_write(inode_ptr, (char *)inode, sizeof(struct inode_struct));
     return res1 + res2;
   } else { // 情况3: 全部在间接块区
     if (inode->indir_block == DA_NULL) {
       inode->indir_block = block_malloc();
     }
-    return _indirect_zone1_write(inode, inode->indir_block, buf, nbyte,
-                                 offset - direct_max_size);
+    res = _indirect_zone1_write(inode, inode->indir_block, buf, nbyte,
+                                offset - direct_max_size);
+    disk_write(inode_ptr, (char *)inode, sizeof(struct inode_struct));
+    return res;
   }
 }
 
@@ -264,8 +269,13 @@ xsize_t xfs_write(int fildes, char *buf, xsize_t nbyte) {
   struct fd_struct *fd = fd_table_search(fildes);
   if (fd == NULL)
     return -1;
-  if (!(fd->mod & O_ACCMODE == O_WRONLY || fd->mod & O_ACCMODE == O_RDWR)) {
+  if (!((fd->oflags & O_ACCMODE) == O_WRONLY ||
+        (fd->oflags & O_ACCMODE) == O_RDWR)) {
     return -1;
   }
-  return _write_inode(fd->inode, buf, nbyte, fd->offset);
+  int res = _write_inode(fd->inode_ptr, fd->inode, buf, nbyte, fd->offset);
+  if (res != -1) {
+    fd->offset += res;
+  }
+  return res;
 }

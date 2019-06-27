@@ -1,12 +1,12 @@
 #ifndef XFS_FS_TYPES
 #define XFS_FS_TYPES
+#include <include/rbtree.h>
 #include <include/xfs.h>
-#include <include/xfs/fs.h>
 
 #define MAGIC_NUMBER 0xFE9527EF
 #define BLOCK_SIZE 4096
 // #define INODE_SEG 0x0000001FF // after 512byte superblock
-#define INODE_SEG 0x000000FFF // a block
+#define INODE_SEG 0x000001000 // a block
 #define FILENAME_MAX_LENGTH 60
 #define INODE_DIRECT_COUNT 7
 typedef unsigned char disk_block[BLOCK_SIZE];
@@ -66,8 +66,6 @@ struct inode_list {
   struct inode_struct inode;
   struct list_head list;
 };
-
-typedef struct diritem_struct XDIR_struct;
 
 struct fd_struct {
   int fd;
