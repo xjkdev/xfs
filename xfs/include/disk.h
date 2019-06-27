@@ -41,6 +41,7 @@ int32_t disk_close(FILE*f);
 
 int32_t disk_read(int32_t addr, char *buff, int32_t len);
 int32_t disk_write(int32_t addr, char *buff, int32_t len);
+int32_t disk_write_super(int32_t addr, char *buff, int32_t len);
 
 int32_t disk_init(char *path);
 

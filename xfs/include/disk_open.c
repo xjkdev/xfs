@@ -1,5 +1,5 @@
 #include"disk.h"
-#include"stdio.h"
+#include<stdio.h>
 int32_t disk_open(char *path)
 {
 	FILE*f = fopen(path, "ab+");
