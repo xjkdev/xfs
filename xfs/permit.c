@@ -94,3 +94,28 @@ void group_list_print() {
   }
   return;
 }
+
+xuid_t login(char *usr_name, char *usr_passwd) {
+  bool flag_exsit = 0;
+  bool flag_correct = 0;
+  usr usr_temp;
+  for (int i = 0; i < uid_auto_increase; ++i) {
+    usr_temp = usr_list[i];
+    if (strcmp(usr_temp.usr_name, usr_name) == 0) {
+      flag_exsit = 1;
+      break;
+    }
+  }
+  // usr_name does not exsit
+  if (flag_exsit == 0)
+    return 0;
+  cur_uid = usr_temp.uid;
+  cur_gid = usr_temp.gid;
+  return 1;
+}
+
+void logout() {
+  cur_gid = 0;
+  cur_uid = 0;
+  return;
+}

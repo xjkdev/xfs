@@ -25,6 +25,10 @@ void group_element_print(xgid_t gid);
 void user_list_print();
 // printf all group info by calling group_element_print(...)
 void group_list_print();
+// login
+int32_t login(char *usr_name, char *usr_passwd);
+// logout
+void logout();
 
 struct usr {
   char usr_name[PASSWDSIZE];
