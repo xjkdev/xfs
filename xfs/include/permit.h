@@ -24,6 +24,12 @@ void group_elem_printf(int16_t gid);
 void usr_list_printf();
 //printf all group info by calling group_elem_printf(...)
 void group_list_printf();
+//login
+int32_t login(char * usr_name,char * usr_passwd);
+//logout
+void logout();
+
+
 
 typedef struct usr 
 {

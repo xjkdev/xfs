@@ -1,6 +1,7 @@
 #include"permit.h"
 #include<stdio.h>
 #include<string.h>
+#include"globals.h"
 //correct return uid else return -1
 // int32_t creat_usr(char *usr_name,char* passwd);
 // //correct return gid else return -1
@@ -104,5 +105,35 @@ void group_list_printf()
     {
         group_elem_printf(i);
     }
+    return ;
+}
+
+
+int32_t login(char * usr_name,char * usr_passwd)
+{
+    int32_t flag_exsit=0;
+    int32_t flag_correct=0;
+    usr usr_temp;
+    for(int i=0;i<uid_auto_increase;++i)
+    {
+        usr_temp=usr_list[i];
+        if(strcmp(usr_temp.usr_name,usr_name)==0)
+        {
+            flag_exsit=1;
+            break;
+        }
+    }
+    //usr_name does not exsit
+    if(flag_exsit==0)
+        return 0;
+    cur_uid=usr_temp.uid;
+    cur_gid=usr_temp.gid;
+    return 1;
+}
+
+void logout()
+{
+    cur_gid=-1;
+    cur_uid=-1;
     return ;
 }
