@@ -70,7 +70,7 @@ void test_read_write() {
   int res;
   char str1[] = "hello world";
   char buffer[sizeof(str1)];
-  int fd = xfs_open("/abcd", O_RDWR);
+  int fd = xfs_open("/abcd", O_RDWR | O_CREAT);
   print_res(fd);
   assert(fd != -1);
   res = xfs_write(fd, str1, sizeof(str1));

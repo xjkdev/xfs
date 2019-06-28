@@ -66,7 +66,7 @@ int xfs_rmdir(const char *path);
 
 int xfs_chmod(const char *path, xmode_t mode);
 int xfs_chown(const char *path, xuid_t owner, xgid_t group);
-void xfs_stat(const char *path);
+int xfs_stat(const char *path);
 
 int xfs_login(const char *username, const char *passwd);
 xuid_t xfs_creat_usr(char *usr_name, char *passwd);

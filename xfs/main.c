@@ -17,21 +17,38 @@ bool first_line = true;
 
 int rl_ungetc() { rl_index--; }
 const char *completion_all[] = {
-    "disk_open", "disk_init", "format",       "load",
-    "open",      "close",     "fsync",        "read",
-    "write",     "lseek",     "listdir",      "remove",
-    "mkdir",     "rmdir",     "chown",        "chmod",
-    "stat",      "login",     "create_user",  "logout",
-    "getuid",    "getgid",    "create_group", "add_user_to_group"};
-char **completion(const char *text, int start, int end) {
-  char **tmp = malloc(sizeof(completion_all));
-  memcpy(tmp, completion_all, sizeof(completion_all));
-  return tmp;
+    "disk_open(", "disk_init(", "format(",       "load()",
+    "open(",      "close(",     "fsync(",        "read(",
+    "write(",     "lseek(",     "listdir(",      "remove(",
+    "mkdir(",     "rmdir(",     "chown(",        "chmod(",
+    "stat(",      "login(",     "create_user(",  "logout()",
+    "getuid()",   "getgid()",   "create_group(", "add_user_to_group(",
+    NULL};
+
+char *xfs_name_generator(const char *text, int state) {
+  static int list_index, len;
+  char *name;
+  if (!state) {
+    list_index = 0;
+    len = strlen(text);
+  }
+  while ((name = completion_all[list_index++])) {
+    if (strncmp(name, text, len) == 0) {
+      return strdup(name);
+    }
+  }
+  return NULL;
+}
+
+char **xfs_name_completion(const char *text, int start, int end) {
+  rl_attempted_completion_over = 1;
+  return rl_completion_matches(text, xfs_name_generator);
 }
 
 int rl_getchar() {
   if (first_line) { // init
     read_history("/tmp/xfs_history");
+    rl_attempted_completion_function = xfs_name_completion;
   }
   if (first_line || rl_buffer[rl_index] == '\0') {
     rl_buffer = readline("> ");
@@ -306,7 +323,8 @@ int main() {
         xfs_listdir(parameters[0].str);
       }
       if (strcmp(func_name, "stat") == 0) {
-        xfs_stat(parameters[0].str);
+        int res = xfs_stat(parameters[0].str);
+        printf("%d\n", res);
       }
       if (strcmp(func_name, "disk_init") == 0) {
         int res = disk_init(parameters[0].str);

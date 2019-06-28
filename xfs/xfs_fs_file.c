@@ -154,7 +154,7 @@ int xfs_open(const char *path, int oflag) {
     }
   }
 
-  if (!flag_existed) {
+  if (!flag_existed && (oflag & O_CREAT != 0)) {
     struct diritem_struct new_diritem;
     inode_ptr = inode_alloc();
     init_inode(opened_file, cur_uid, cur_gid);
@@ -164,6 +164,10 @@ int xfs_open(const char *path, int oflag) {
     _write_inode(parent_ptr, parent, (char *)&new_diritem,
                  sizeof(struct diritem_struct),
                  parent->file_size); // 新目录项追加在最后
+  } else if (!flag_existed) {
+    free(opened_file);
+    _destroy_parent_dir(parent);
+    return -1;
   }
   // 新建fd
   new_fd = malloc(sizeof(struct fd_struct));
@@ -423,8 +427,10 @@ void print_has(int a, char ch) {
     putchar('-');
 }
 
-void xfs_stat(const char *path) {
+int xfs_stat(const char *path) {
   int fd = xfs_open(path, O_RDONLY);
+  if (fd == -1)
+    return -1;
   struct fd_struct *pos = fd_table_search(fd);
   int mod = pos->inode->mod;
   print_has(mod & FM_DIR, 'd');
@@ -440,4 +446,5 @@ void xfs_stat(const char *path) {
   printf("\t%d\t%d\t%d\n", pos->inode->uid, pos->inode->gid,
          pos->inode->file_size);
   xfs_close(fd);
+  return 0;
 }
