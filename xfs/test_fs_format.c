@@ -22,18 +22,18 @@ void test_format1() {
 
 void test_listdir() {
   int res;
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: null\n");
   print_res(0);
   res = xfs_creat("abcd", DEFAULT_MODE);
   print_res(res);
   assert(res == 0);
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: abcd\n");
   print_res(0);
   res = xfs_creat("/ab", DEFAULT_MODE);
   print_res(res);
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: abcd, ab\n");
   print_res(0);
 }
@@ -43,25 +43,25 @@ void test_mkdir() {
   res = xfs_mkdir("/c");
   print_res(res);
   assert(res == 0);
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: abcd, ab, c\n");
   print_res(0);
-  listdir("/c");
+  xfs_listdir("/c");
   printf("Expect: null\n");
   print_res(0);
   res = xfs_mkdir("/c/a");
   print_res(res);
   assert(res == 0);
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: abcd, ab, c\n");
   print_res(0);
-  listdir("/c");
+  xfs_listdir("/c");
   printf("Expect: a\n");
   print_res(0);
-  listdir("/c/a");
+  xfs_listdir("/c/a");
   printf("Expect: null\n");
   print_res(0);
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: abcd, ab, c\n");
   print_res(0);
 }
@@ -120,12 +120,12 @@ void test_user() {
 }
 
 void test_remove() {
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: abcd, defc, opge, ab, c\n");
   int res = xfs_remove("/ab");
   print_res(res);
   assert(res == 0);
-  listdir("/");
+  xfs_listdir("/");
   printf("Expect: abcd, defc, opge, c\n");
   print_res(0);
 }

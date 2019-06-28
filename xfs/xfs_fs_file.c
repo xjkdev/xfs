@@ -416,10 +416,28 @@ int xfs_chown(const char *path, xuid_t owner, xgid_t group) {
   return 0;
 }
 
+void print_has(int a, char ch) {
+  if (a)
+    putchar(ch);
+  else
+    putchar('-');
+}
+
 void xfs_stat(const char *path) {
   int fd = xfs_open(path, O_RDONLY);
   struct fd_struct *pos = fd_table_search(fd);
-  printf("%xd\t%d\t%d\t%d\n", pos->inode->mod, pos->inode->uid, pos->inode->gid,
+  int mod = pos->inode->mod;
+  print_has(mod & FM_DIR, 'd');
+  print_has(mod & FM_IRUSR, 'r');
+  print_has(mod & FM_IWUSR, 'w');
+  print_has(mod & FM_IXUSR, 'x');
+  print_has(mod & FM_IRGRP, 'r');
+  print_has(mod & FM_IWGRP, 'w');
+  print_has(mod & FM_IXGRP, 'x');
+  print_has(mod & FM_IROTH, 'r');
+  print_has(mod & FM_IWOTH, 'w');
+  print_has(mod & FM_IXOTH, 'x');
+  printf("\t%d\t%d\t%d\n", pos->inode->uid, pos->inode->gid,
          pos->inode->file_size);
   xfs_close(fd);
 }

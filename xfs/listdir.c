@@ -2,7 +2,7 @@
 #include <include/list.h>
 #include <include/xfs/fs.h>
 #include <stdio.h>
-void listdir(const char *path) {
+void xfs_listdir(const char *path) {
   XDIR *dirs = xfs_opendir(path);
   struct list_head *pos;
   if (!list_empty(&dirs->node)) {

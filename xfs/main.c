@@ -6,9 +6,46 @@
 #include <include/rbtree.h>
 #include <include/xfs/fs.h>
 #include <include/xfs/fs_types.h>
+#include <readline/history.h>
 #include <readline/readline.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+char *rl_buffer = NULL;
+int rl_index = 0;
+bool first_line = true;
+
+int rl_ungetc() { rl_index--; }
+const char *completion_all[] = {
+    "disk_open", "disk_init", "format",       "load",
+    "open",      "close",     "fsync",        "read",
+    "write",     "lseek",     "listdir",      "remove",
+    "mkdir",     "rmdir",     "chown",        "chmod",
+    "stat",      "login",     "create_user",  "logout",
+    "getuid",    "getgid",    "create_group", "add_user_to_group"};
+char **completion(const char *text, int start, int end) {
+  char **tmp = malloc(sizeof(completion_all));
+  memcpy(tmp, completion_all, sizeof(completion_all));
+  return tmp;
+}
+
+int rl_getchar() {
+  if (first_line) { // init
+    read_history("/tmp/xfs_history");
+  }
+  if (first_line || rl_buffer[rl_index] == '\0') {
+    rl_buffer = readline("> ");
+    if (rl_buffer)
+      add_history(rl_buffer);
+    rl_index = 0;
+    first_line = false;
+  }
+  if (!rl_buffer)
+    return EOF;
+  else {
+    return rl_buffer[rl_index++];
+  }
+}
 
 void init_globals();
 
@@ -23,9 +60,9 @@ struct parameter_struct {
 } parameters[10];
 
 char get_nonspace() {
-  char ch = getchar();
+  char ch = rl_getchar();
   while (ch == '\r' || ch == '\n' || ch == ' ' || ch == '\t') {
-    ch = getchar();
+    ch = rl_getchar();
   }
   return ch;
 }
@@ -33,16 +70,16 @@ char get_nonspace() {
 char *handle_string() {
   int i, ch;
   char *buffer = (char *)malloc(100);
-  if ((ch = getchar()) != '\"') {
+  if ((ch = rl_getchar()) != '\"') {
     printf("error %d\n", __LINE__);
     free(buffer);
     return NULL;
   }
   i = 0;
-  ch = getchar();
+  ch = rl_getchar();
   while (ch != '\"' && ch != EOF && i < 100) {
     buffer[i++] = ch;
-    ch = getchar();
+    ch = rl_getchar();
   }
   buffer[i] = '\0';
   if (ch != '\"') {
@@ -60,10 +97,10 @@ int handle_number() {
   ch = get_nonspace();
   while ('0' <= ch && ch <= '9') {
     res = res * 10 + ch - '0';
-    ch = getchar();
+    ch = get_nonspace();
   }
   if (!('0' <= ch && ch <= '9')) {
-    ungetc(ch, stdin);
+    rl_ungetc();
   }
   return res;
 }
@@ -102,10 +139,10 @@ int handle_const() {
   char buffer[21];
   int i = 0, res;
   char ch;
-  ch = getchar();
+  ch = rl_getchar();
   while ((('A' <= ch && ch <= 'Z') || ch == '_') && i < 20) {
     buffer[i] = ch;
-    ch = getchar();
+    ch = rl_getchar();
   }
   buffer[i + 1] = '\0';
   struct const_repr *pos;
@@ -131,7 +168,7 @@ void handle_parameter() {
   int peak_ch, ch;
 
   peak_ch = get_nonspace();
-  ungetc(peak_ch, stdin);
+  rl_ungetc();
   if (peak_ch == '\"') {
     char *str = handle_string();
     struct parameter_struct tmp;
@@ -174,7 +211,7 @@ void handle_func() {
   ch = get_nonspace();
   while (('a' <= ch && ch <= 'z') || ch == '_') {
     func_name[i++] = ch;
-    ch = getchar();
+    ch = rl_getchar();
   }
   func_name[i] = '\0';
   if (ch == '(') {
@@ -227,9 +264,9 @@ int main() {
   init_globals();
   int ch;
   char buffer[200];
-  while ((ch = getchar()) != EOF) {
+  while ((ch = rl_getchar()) != EOF) {
     if (ch != '\r' && ch != '\n' && ch != ' ')
-      ungetc(ch, stdin);
+      rl_ungetc();
     handle_func();
     if (parameter_count == 0) {
       if (strcmp(func_name, "logout") == 0) {
@@ -266,8 +303,7 @@ int main() {
         printf("%d\n", res);
       }
       if (strcmp(func_name, "listdir") == 0) {
-        int res = listdir(parameters[0].str);
-        printf("%d\n", res);
+        xfs_listdir(parameters[0].str);
       }
       if (strcmp(func_name, "stat") == 0) {
         xfs_stat(parameters[0].str);
@@ -346,5 +382,6 @@ int main() {
       }
     }
   }
+  write_history("/tmp/xfs_history");
   return 0;
 }

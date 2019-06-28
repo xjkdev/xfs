@@ -1,6 +1,6 @@
 CC=gcc
 DIR_INCLUDE = include
-CFLAGS = --std=gnu99 -I. -g
+CFLAGS = --std=gnu99 -I. -g -L/usr/local/lib -I/usr/local/include -lreadline
 DEPS = $(wildcard $(DIR_INCLUDE)/**/*.h)
 OUTPUT = target
 TARGET = xfs

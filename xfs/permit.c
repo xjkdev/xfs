@@ -16,7 +16,7 @@ xuid_t xfs_creat_usr(char *usr_name, char *passwd) {
   new_usr->uid = uid_auto_increase++;
   // new_usr.gid=gid_auto_increase++;
   // gid =-1 means usr is not in a group
-  new_usr->gid = -1;
+  new_usr->gid = 0;
   strncpy(new_usr->usr_name, usr_name, strlen(usr_name));
   strncpy(new_usr->usr_passwd, passwd, strlen(passwd));
   return new_usr->uid;
