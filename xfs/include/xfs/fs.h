@@ -79,6 +79,7 @@ xuid_t xfs_getuid();
 // correct return gid else return -1
 xuid_t xfs_getgid();
 int add_usr_to_group(xgid_t gid, xuid_t uid);
+xgid_t xfs_creat_group(char *group_name);
 // int setgid(xgid_t gid);
 
 struct XDIR_struct {

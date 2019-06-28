@@ -6,6 +6,7 @@
 #include <include/rbtree.h>
 #include <include/xfs/fs.h>
 #include <include/xfs/fs_types.h>
+#include <readline/readline.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -102,7 +103,7 @@ int handle_const() {
   int i = 0, res;
   char ch;
   ch = getchar();
-  while (('A' <= ch && ch <= 'Z' || ch == '_') && i < 20) {
+  while ((('A' <= ch && ch <= 'Z') || ch == '_') && i < 20) {
     buffer[i] = ch;
     ch = getchar();
   }
@@ -185,6 +186,44 @@ void handle_func() {
 }
 
 int main() {
+  printf("Function Refrence:\n"
+         "disk_open(real_world_path)\n"
+         "disk_init(real_world_path)\n"
+         "format()\n"
+         "load()\n"
+
+         "open(path,oflag) -> fd\n"
+         "close(fd)\n"
+         "fsync(fd)\n"
+         "read(fd, {{buf}}, size) -> size    /* buf was preprepared in command "
+         "line */\n"
+         "write(fd, buf, size) -> size\n"
+         "lseek(fd, offset, whence) -> offset\n"
+
+         "listdir(path)\n"
+         "remove(path)\n"
+         "mkdir(path)\n"
+         "rmdir(path)\n"
+
+         "chown(path, uid, gid)\n"
+         "chmod(path, mode)\n"
+         "stat(path)\n"
+
+         "login(name, passwd)\n"
+         "create_user(name, passwd) -> uid\n"
+         "logout()\n"
+         "getuid() -> uid\n"
+         "getgid() -> gid\n"
+
+         "create_group(name) -> gid\n"
+         "add_user_to_group(uid, gid)\n");
+  printf("\n\n");
+  printf("Const Reference:\n");
+  struct const_repr *pos;
+  for (pos = const_table; pos->str != NULL; pos++) {
+    printf("%s\t%d\n", pos->str, pos->num);
+  }
+  printf("\n\n");
   init_globals();
   int ch;
   char buffer[200];
@@ -209,6 +248,14 @@ int main() {
         int res = xfs_load();
         printf("%d\n", res);
       }
+      if (strcmp(func_name, "getgid") == 0) {
+        int res = xfs_getgid();
+        printf("%d\n", res);
+      }
+      if (strcmp(func_name, "getuid") == 0) {
+        int res = xfs_getuid();
+        printf("%d\n", res);
+      }
     } else if (parameter_count == 1) {
       if (strcmp(func_name, "remove") == 0) {
         int res = xfs_remove(parameters[0].str);
@@ -216,6 +263,10 @@ int main() {
       }
       if (strcmp(func_name, "rmdir") == 0) {
         int res = xfs_rmdir(parameters[0].str);
+        printf("%d\n", res);
+      }
+      if (strcmp(func_name, "listdir") == 0) {
+        int res = listdir(parameters[0].str);
         printf("%d\n", res);
       }
       if (strcmp(func_name, "stat") == 0) {
@@ -241,6 +292,11 @@ int main() {
         int res = xfs_mkdir(parameters[0].str);
         printf("%d\n", res);
       }
+      if (strcmp(func_name, "create_group") == 0) {
+        int res = xfs_creat_group(parameters[0].str);
+        printf("%d\n", res);
+      }
+
     } else if (parameter_count == 2) {
       if (strcmp(func_name, "open") == 0) {
         int res = xfs_open(parameters[0].str, parameters[1].num);
@@ -252,6 +308,10 @@ int main() {
       }
       if (strcmp(func_name, "login") == 0) {
         int res = xfs_login(parameters[0].str, parameters[1].str);
+        printf("%d\n", res);
+      }
+      if (strcmp(func_name, "create_user") == 0) {
+        int res = xfs_creat_usr(parameters[0].str, parameters[1].str);
         printf("%d\n", res);
       }
       if (strcmp(func_name, "add_user_to_group") == 0) {
