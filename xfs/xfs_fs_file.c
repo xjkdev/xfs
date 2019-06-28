@@ -6,6 +6,7 @@
 #include <include/xfs/fs_types.h>
 #include <include/xfs/general.h>
 #include <include/xfs/permission.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 int _write_inode(diskptr_t inode_ptr, struct inode_struct *inode, char *buf,
@@ -361,4 +362,64 @@ XDIR *xfs_opendir(const char *filename) {
   }
   xfs_close(fd);
   return res;
+}
+
+xoff_t xfs_lseek(int fildes, xoff_t offset, int whence) {
+  struct fd_struct *fd = fd_table_search(fildes);
+  if (fd == NULL)
+    return -1;
+  if (whence == XSEEK_SET) {
+    fd->offset = offset;
+  } else if (whence == XSEEK_CUR) {
+    fd->offset += offset;
+  } else if (whence == XSEEK_END) {
+    fd->offset = fd->inode->file_size + offset;
+  }
+  return fd->offset;
+}
+
+int xfs_rmdir(const char *path) {
+  int fd = xfs_open(path, O_RDONLY);
+  struct fd_struct *pos = fd_table_search(fd);
+  if (pos->inode->file_size > 0) {
+    printf("count not remove an directory with files.");
+    return -1;
+  }
+  xfs_close(fd);
+  return xfs_remove(path);
+}
+
+int xfs_chmod(const char *path, xmode_t mode) {
+  int fd = xfs_open(path, O_RDWR);
+  struct fd_struct *pos = fd_table_search(fd);
+  pos->inode->mod = mode;
+  int res = xfs_close(fd);
+  if (res == -1) {
+    return -1;
+  }
+  return 0;
+}
+
+int xfs_chown(const char *path, xuid_t owner, xgid_t group) {
+  int fd = xfs_open(path, O_RDWR);
+  struct fd_struct *pos = fd_table_search(fd);
+  if (owner != -1) {
+    pos->inode->uid = owner;
+  }
+  if (group != -1) {
+    pos->inode->gid = group;
+  }
+  int res = xfs_close(fd);
+  if (res == -1) {
+    return -1;
+  }
+  return 0;
+}
+
+void xfs_stat(const char *path) {
+  int fd = xfs_open(path, O_RDONLY);
+  struct fd_struct *pos = fd_table_search(fd);
+  printf("%xd\t%d\t%d\t%d\n", pos->inode->mod, pos->inode->uid, pos->inode->gid,
+         pos->inode->file_size);
+  xfs_close(fd);
 }

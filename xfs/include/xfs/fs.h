@@ -43,6 +43,12 @@
 #define DEFAULT_DIR_MODE                                                       \
   (FM_DIR | FM_IRWXU | FM_IRGRP | FM_IXGRP | FM_IROTH | FM_IXOTH)
 
+#ifndef XSEEK_SET
+#define XSEEK_SET 0
+#define XSEEK_CUR 1
+#define XSEEK_END 2
+#endif
+
 int xfs_open(const char *path, int oflag);
 int xfs_close(int fildes);
 int xfs_remove(const char *path);
@@ -51,15 +57,16 @@ int xfs_creat(const char *path, xmode_t mode);
 
 xsize_t xfs_read(int fildes, const char *buf, xsize_t nbyte);
 xsize_t xfs_write(int fildes, char *buf, xsize_t nbyte);
-// xoff_t xfs_lseek(int fildes, xoff_t offset, int whence);
+xoff_t xfs_lseek(int fildes, xoff_t offset, int whence);
 
-// int xfs_rename(const char *old, const char *new);
+int xfs_rename(const char *old, const char *new);
 
 int xfs_mkdir(const char *path);
-// int xfs_rmdir(const char *path);
+int xfs_rmdir(const char *path);
 
-// int xfs_chmod(const char *path, xmode_t mode);
-// int xfs_chown(const char *path, xuid_t owner, xgid_t group);
+int xfs_chmod(const char *path, xmode_t mode);
+int xfs_chown(const char *path, xuid_t owner, xgid_t group);
+void xfs_stat(const char *path);
 
 int xfs_login(const char *username, const char *passwd);
 xuid_t xfs_creat_usr(char *usr_name, char *passwd);
@@ -67,8 +74,11 @@ int xfs_logout();
 // int xfs_useradd(const char *username);
 // int xfs_passwd(xuid_t uid, const char *passwd);
 
+// correct return uid else return -1
 xuid_t xfs_getuid();
-// xuid_t xfs_getgid();
+// correct return gid else return -1
+xuid_t xfs_getgid();
+int add_usr_to_group(xgid_t gid, xuid_t uid);
 // int setgid(xgid_t gid);
 
 struct XDIR_struct {

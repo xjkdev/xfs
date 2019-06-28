@@ -4,6 +4,7 @@
 #include <include/hashtable.h>
 #include <include/list.h>
 #include <include/rbtree.h>
+#include <include/xfs/fs.h>
 #include <include/xfs/fs_types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,14 @@ struct parameter_struct {
   char *str;
   int num;
 } parameters[10];
+
+char get_nonspace() {
+  char ch = getchar();
+  while (ch == '\r' || ch == '\n' || ch == ' ' || ch == '\t') {
+    ch = getchar();
+  }
+  return ch;
+}
 
 char *handle_string() {
   int i, ch;
@@ -47,7 +56,7 @@ char *handle_string() {
 int handle_number() {
   int res = 0;
   int ch;
-  ch = getchar();
+  ch = get_nonspace();
   while ('0' <= ch && ch <= '9') {
     res = res * 10 + ch - '0';
     ch = getchar();
@@ -58,10 +67,69 @@ int handle_number() {
   return res;
 }
 
+const struct const_repr {
+  const char *str;
+  int num;
+} const_table[] = {{"O_CREAT", 0x0200},
+                   {"O_TRUNC", 0x0400},
+                   {"O_EXCL", 0x0800},
+                   {"O_RDONLY", 0x0000},
+                   {"O_WRONLY ", 0x0001},
+                   {"O_RDWR", 0x0002},
+                   {"O_ACCMODE", 0x0003},
+                   {"O_APPEND", 0x0008},
+
+                   {"SEEK_SET", 0},
+                   {"SEEK_CUR", 1},
+                   {"SEEK_END", 2},
+
+                   {"FM_IRWXU", 00700},
+                   {"FM_IRUSR", 00400},
+                   {"FM_IWUSR", 00200},
+                   {"FM_IXUSR", 00100},
+                   {"FM_IRWXG", 00070},
+                   {"FM_IRGRP", 00040},
+                   {"FM_IWGRP", 00020},
+                   {"FM_IXGRP", 00010},
+                   {"FM_IRWXO", 00007},
+                   {"FM_IROTH", 00004},
+                   {"FM_IWOTH", 00002},
+                   {"FM_IXOTH", 00001},
+                   {NULL, 0}};
+
+int handle_const() {
+  char buffer[21];
+  int i = 0, res;
+  char ch;
+  ch = getchar();
+  while (('A' <= ch && ch <= 'Z' || ch == '_') && i < 20) {
+    buffer[i] = ch;
+    ch = getchar();
+  }
+  buffer[i + 1] = '\0';
+  struct const_repr *pos;
+  bool flag_found = false;
+  for (pos = const_table; pos->str != NULL; pos++) {
+    if (strcmp(buffer, pos->str) == 0) {
+      res = pos->num;
+      flag_found = true;
+    }
+  }
+  if (!flag_found) {
+    res = 0;
+    printf("error %d\n", __LINE__);
+  }
+  ch = get_nonspace();
+  if (ch == '|') {
+    res |= handle_const();
+  }
+  return res;
+}
+
 void handle_parameter() {
   int peak_ch, ch;
 
-  peak_ch = getchar();
+  peak_ch = get_nonspace();
   ungetc(peak_ch, stdin);
   if (peak_ch == '\"') {
     char *str = handle_string();
@@ -77,8 +145,15 @@ void handle_parameter() {
     tmp.num = num;
     parameters[parameter_count] = tmp;
     parameter_count++;
+  } else if ('A' <= peak_ch && peak_ch <= 'Z') {
+    int num = handle_const();
+    struct parameter_struct tmp;
+    tmp.tag = 1;
+    tmp.num = num;
+    parameters[parameter_count] = tmp;
+    parameter_count++;
   }
-  ch = getchar();
+  ch = get_nonspace();
   if (ch == ',') {
     handle_parameter();
   } else if (ch == ')') {
@@ -95,8 +170,8 @@ void handle_parameter() {
 void handle_func() {
   char ch;
   int i = 0;
-  ch = getchar();
-  while ('a' <= ch && ch <= 'z' || ch == '_') {
+  ch = get_nonspace();
+  while (('a' <= ch && ch <= 'z') || ch == '_') {
     func_name[i++] = ch;
     ch = getchar();
   }
@@ -123,7 +198,7 @@ int main() {
         printf("%d\n", res);
       }
       if (strcmp(func_name, "disk_close") == 0) {
-        int res = xfs_close();
+        int res = disk_close();
         printf("%d\n", res);
       }
       if (strcmp(func_name, "format") == 0) {
@@ -138,6 +213,13 @@ int main() {
       if (strcmp(func_name, "remove") == 0) {
         int res = xfs_remove(parameters[0].str);
         printf("%d\n", res);
+      }
+      if (strcmp(func_name, "rmdir") == 0) {
+        int res = xfs_rmdir(parameters[0].str);
+        printf("%d\n", res);
+      }
+      if (strcmp(func_name, "stat") == 0) {
+        xfs_stat(parameters[0].str);
       }
       if (strcmp(func_name, "disk_init") == 0) {
         int res = disk_init(parameters[0].str);
@@ -172,6 +254,15 @@ int main() {
         int res = xfs_login(parameters[0].str, parameters[1].str);
         printf("%d\n", res);
       }
+      if (strcmp(func_name, "add_user_to_group") == 0) {
+        int res = add_usr_to_group(parameters[0].num, parameters[1].num);
+        printf("%d\n", res);
+      }
+      if (strcmp(func_name, "chmod") == 0) {
+        int res = xfs_chmod(parameters[0].str, parameters[1].num);
+        printf("%d\n", res);
+      }
+
     } else if (parameter_count == 3) {
       if (strcmp(func_name, "read") == 0) {
         int res = xfs_read(parameters[0].num, buffer, parameters[2].num);
@@ -181,6 +272,16 @@ int main() {
       if (strcmp(func_name, "write") == 0) {
         int res =
             xfs_write(parameters[0].num, parameters[1].str, parameters[2].num);
+        printf("%d\n", res);
+      }
+      if (strcmp(func_name, "lseek") == 0) {
+        int res =
+            xfs_lseek(parameters[0].num, parameters[1].num, parameters[2].num);
+        printf("%d\n", res);
+      }
+      if (strcmp(func_name, "chown") == 0) {
+        int res =
+            xfs_chown(parameters[0].str, parameters[1].num, parameters[2].num);
         printf("%d\n", res);
       }
     }
