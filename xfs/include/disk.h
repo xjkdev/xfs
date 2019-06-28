@@ -1,49 +1,27 @@
 #ifndef _XFS_DISK_H
 #define _XFS_DISK_H
 
-
-
-#include<stdint.h>
-#include<stdio.h>
-#define DISKSIZE 1024*1024*4//4GB
-#define DISKHEADSIZE 128
-#define DISKINITSIZE 1024 //1MB
-#define DISKPATHLEN 100
-
-typedef struct VirtualDisk_head
-{
-	uint32_t max_disk_size ;
-	uint32_t real_disk_size;
-	uint32_t head_size ;
-	char disk_path[DISKPATHLEN];
-	FILE *disk_file;
-
-}VirtualDisk_head;
-
-extern VirtualDisk_head disk_head;
-
-
-//1024 bytes 
-//typedef struct VirtualDisk
+#include <include/disk_types.h>
+#include <include/xfs.h>
+// 1024 bytes
+// typedef struct VirtualDisk
 //{
-//	VirtualDisk_head head;
-//	char storage_are[DISKSIZE - sizeof(VirtualDisk_head)];
+//	virtual_disk_head head;
+//	char storage_are[DISKSIZE - sizeof(virtual_disk_head)];
 //
 //
 //}VirtualDisk;
 
-//int32_t disk_open(char *path,FILE*f);
-//int32_t disk_close(char*path,FILE*f);
+// int32 disk_open(char *path,FILE*f);
+// int32_t disk_close(char*path,FILE*f);
 
+int disk_open(char *path);
+int disk_close();
 
-int32_t disk_open(char *path);
-int32_t disk_close(FILE*f);
+int disk_read(diskptr_t addr, const char *buff, xsize_t len);
+int disk_write(diskptr_t addr, char *buff, xsize_t len);
+int disk_write_super(diskptr_t addr, char *buff, xsize_t len);
 
-int32_t disk_read(int32_t addr, char *buff, int32_t len);
-int32_t disk_write(int32_t addr, char *buff, int32_t len);
-int32_t disk_write_super(int32_t addr, char *buff, int32_t len);
+int disk_init(char *path);
 
-int32_t disk_init(char *path);
-
-
-#endif 
+#endif
